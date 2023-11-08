@@ -14,7 +14,13 @@ Fork自[chocovon](https://github.com/chocovon/thiefbook-js)，感谢大大。修
 fetch("https://raw.githubusercontent.com/rainow/Thief-book-in-Browser/master/thiefbook.js").then(response => response.text()).then(text => eval(text))
 ```
 
-### 2.2 油猴脚本 (Tampermonkey)
+### 2.2 添加到收藏夹
+复制下面的代码，打开收藏夹，新建一个收藏，名字随便起，url填刚才你复制的代码。使用的时候打开网页以后，点一下这个收藏夹就可以了。<br>
+```javascript
+javascript:fetch("https://raw.githubusercontent.com/rainow/Thief-book-in-Browser/master/thiefbook.js").then(response => response.text()).then(text => eval(text))
+```
+
+### 2.3 油猴脚本 (Tampermonkey)
 油猴脚本用的是油猴的存储方法，随便打开哪个网页都可以恢复阅读进度。条件允许的话还是建议用油猴吧。<br>
 Greasy Fork地址：[Greasy Fork](https://greasyfork.org/zh-CN/scripts/479230-%E6%91%B8%E9%B1%BC%E7%A5%9E%E5%99%A8%E7%BD%91%E9%A1%B5%E7%89%88-thief-book-in-browser)
 
