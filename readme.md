@@ -4,7 +4,7 @@ Fork自[chocovon](https://github.com/chocovon/thiefbook-js)，感谢大大。修
 <br><br><br>
 
 ## 1. 安装方式(Install)
-不管哪个安装方式，记得按一下F1才会显示界面，在左下角。
+界面在左下角哦。
 
 ### 1.1 浏览器Console运行 (Run script in console model)
 打开浏览器的控制台（Console），复制下面的代码并在控制台执行，成功后，当前页面左下角会出现操作界面和提示。<br>
