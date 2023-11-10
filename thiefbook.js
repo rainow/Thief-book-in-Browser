@@ -13,6 +13,7 @@
     let timerInterval = 3000;
     let posBeforeSearch = 0;
     let bookmode = false;
+    let fileCoder = GM_getValue("thief-book-encoder","utf-8"); // 默认以utf-8格式打开，会记住最后一次切换的格式
 
     if(!localStorage){
         text = "您的浏览器不支持保存进度！"+text;
@@ -23,7 +24,7 @@
         '        .thief-book-line-box {\n' +
         '            position: fixed;\n' +
         '            left: 0;\n' +
-        '            bottom: 0;\n' +
+        '            bottom: 0px;\n' +
         '        }\n' +
         '        .thief-book-line {\n' +
         '            font-size: 10px;\n' +
@@ -69,7 +70,7 @@
         '        }\n' +
         '        #thief-book-searchbox{\n' +
         '			border: 1px solid black;\n' +
-        '			display: block;\n'+
+        '			display: none;\n'+
         '			width: 300px;\n' +
         '			height: 150px;\n' +
         '			position: absolute;\n' +
@@ -101,11 +102,29 @@
         '			font-size: 12px;\n' +
         '			cursor: pointer;\n' +
         '		}\n' +
+        '       #thief-book-changecoder{\n' +
+        '           border: 1px solid black;\n' +
+        '           height:15px;\n' +
+        '           width: 50px;\n' +
+        '           background-color: #ccc;\n' +
+        '           text-align: center;\n' +
+        '           font-size: 10px;\n' +
+        '           cursor: pointer;\n' +
+        '       }\n' +
+        '       #thief-book-currentcoder{\n' +
+        '           top: 20px;\n' +
+        '           height:15px;\n' +
+        '           width: 50px;\n' +
+        '           background-color: #eee;\n' +
+        '           text-align: center;\n' +
+        '           font-size: 10px;\n' +
+        '       }\n' +
         '    </style>';
 
     document.body.innerHTML +=
         '<div id="thief-book-leftCorner" class="thief-book-mouse-area">\n' +
         '    <div id="thief-book-settings" class="thief-book-settings-area">\n' +
+        '        <div><div id="thief-book-currentcoder" title="当前编码格式">utf-8</div><div id="thief-book-changecoder" title="点击按钮切换编码格式">乱码点我</div></div>\n' +
         '        <label class="thief-book-icon">&#128193;\n' +
         '            <input type="file" id="thief-book-selectFile" style="display:none">\n' +
         '        </label>\n' +
@@ -145,17 +164,12 @@
         '	</div>\n' +
         '</div>';
 
+    document.getElementById('thief-book-currentcoder').innerText = fileCoder;
     parseText(false);
 
     document.getElementById('thief-book-selectFile')
         .addEventListener('change', function(){
-        let fr=new FileReader();
-        fr.onload=function(){
-            text = fr.result;
             initBook();
-        }
-        fr.readAsText(this.files[0]);
-        document.getElementById('thief-book-settings').classList.add('thief-book-semi-hide');
     })
     document.getElementById('thief-book-progressSlider')
         .addEventListener('input', function(){
@@ -164,10 +178,9 @@
         saveProgress();
     })
     document.getElementById('thief-book-progressSlider')
-        .addEventListener('mouseup', function(){
+        .addEventListener('mousedown', function(){
         pointer = parseInt(this.value);
         printLine(true);
-        saveProgress();
     })
     document.getElementById('thief-book-lineLengthSlider')
         .addEventListener('input', function(){
@@ -175,6 +188,12 @@
         this.title = "行宽【" + lineLength + "】";
         if(bookmode)GM_setValue("thief-book-linelength", lineLength);
         parseText(true);
+    })
+    document.getElementById('thief-book-progressSlider')
+        .addEventListener('mouseup', function(){
+        pointer = parseInt(this.value);
+        printLine();
+        saveProgress();
     })
     document.getElementById('thief-book-timerIntervalSlider')
         .addEventListener('input', function(){
@@ -219,6 +238,10 @@
         .addEventListener('click', function(){
         gotoLine(posBeforeSearch);
     })
+    document.getElementById('thief-book-changecoder')
+        .addEventListener('click', function(){
+        tryFileCoder();
+    })
     window.addEventListener('keydown', function(e) {
         if (e.code === keyNextLine) {
             if(!hide)nextLine();
@@ -234,7 +257,51 @@
         }
     });
 
+    function initBook(){
+        let keepProgress = false;
+        let oSelect=document.getElementById('thief-book-selectFile');
+        let old_bookname = GM_getValue("thief-book-bookname", "");
+        let old_progress = parseFloat(GM_getValue("thief-book-progress", 0));
+        let timerInterval = parseInt(GM_getValue("thief-book-timerInterval", 3000));
+        document.getElementById('thief-book-timerIntervalSlider').value = parseInt(timerInterval/1000);
+        document.getElementById('thief-book-timerIntervalSlider').title = "每【" + parseInt(timerInterval/1000) + "】秒定时滚屏";
+        lineLength = parseInt(GM_getValue("thief-book-linelength", lineLength));
+        document.getElementById('thief-book-lineLengthSlider').value = lineLength;
+        document.getElementById('thief-book-lineLengthSlider').title = "行宽【" + lineLength + "】";
 
+        if(oSelect.files[0].name != ""){
+            bookmode = true;
+            if(old_bookname == oSelect.files[0].name){
+                progress = old_progress;
+                keepProgress = true;
+                fileCoder = GM_getValue("thief-book-encoder","utf-8"); 
+                document.getElementById('thief-book-currentcoder').innerText = fileCoder;
+            }
+            else{
+                GM_setValue("thief-book-bookname", oSelect.files[0].name);
+                GM_setValue("thief-book-progress", 0);
+                GM_setValue("thief-book-encoder", 'utf-8');
+                fileCoder = 'utf-8';
+                document.getElementById('thief-book-currentcoder').innerText = fileCoder;
+                progress = 0;
+                keepProgress = false;
+            }
+        }
+        bookChange(keepProgress);
+    }
+
+    function bookChange(keepProgress){
+        if(!keepProgress)keepProgress=false;
+        let oSelect = document.getElementById('thief-book-selectFile');
+        if(!oSelect.files[0])return;
+        let fr=new FileReader();
+        fr.onload=function(){
+            text = fr.result;
+            parseText(keepProgress);
+        }
+        fr.readAsText(oSelect.files[0], fileCoder);
+        document.getElementById('thief-book-settings').classList.add('thief-book-semi-hide');
+    }
     function parseText(keepProgress) {
         lines = parseLines(text);
         if (keepProgress) {
@@ -315,7 +382,7 @@
             document.getElementById('thief-book-leftCorner').style.display = "block";
         }
 
-        document.getElementById('thief-book-lineBox').innerHTML = ''
+        document.getElementById('thief-book-lineBox').innerHTML = '';
 
         if (multiLine) {
             let i = pointer - 20;
@@ -358,35 +425,6 @@
         }
     }
 
-    function initBook(){
-        let keepProgress = false;
-        let oSelect=document.getElementById('thief-book-selectFile');
-        let old_bookname = GM_getValue("thief-book-bookname", "");
-        let old_progress = parseFloat(GM_getValue("thief-book-progress", 0));
-        let timerInterval = parseInt(GM_getValue("thief-book-timerInterval", 3000));
-        document.getElementById('thief-book-timerIntervalSlider').value = parseInt(timerInterval/1000);
-        document.getElementById('thief-book-timerIntervalSlider').title = "每【" + parseInt(timerInterval/1000) + "】秒定时滚屏";
-        lineLength = parseInt(GM_getValue("thief-book-linelength", lineLength));
-        document.getElementById('thief-book-lineLengthSlider').value = lineLength;
-        document.getElementById('thief-book-lineLengthSlider').title = "行宽【" + lineLength + "】";
-
-        if(oSelect.files[0].name != ""){
-            bookmode = true;
-            if(old_bookname == oSelect.files[0].name){
-                progress = old_progress;
-                keepProgress = true;
-            }
-            else{
-                GM_setValue("thief-book-bookname", oSelect.files[0].name);
-                GM_setValue("thief-book-progress", 0);
-                progress = 0;
-                keepProgress = false;
-            }
-        }
-
-        parseText(keepProgress);
-    }
-
     function t_search(stext, direction, from){
         let tmpSearchPos = -1;
         let i = 0;
@@ -417,6 +455,26 @@
     function gotoLine(intLine){
         pointer = intLine;
         printLine();
+    }
+
+    function tryFileCoder(){
+        let encodingList = [
+            'utf-8',
+            'gb2312',
+            'gbk',
+            'gb18030',
+            'big5',
+            'utf-16be',
+            'utf-16le',
+            'ascii'
+        ];
+        var i = encodingList.indexOf(fileCoder);
+        i++;
+        if(i>=encodingList.length)i=0;
+        fileCoder = encodingList[i];
+        if(bookmode)GM_setValue("thief-book-encoder", fileCoder);
+        document.getElementById('thief-book-currentcoder').innerText = fileCoder;
+        initBook();
     }
 
     function GM_setValue(key, value){
