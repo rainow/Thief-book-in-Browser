@@ -27,6 +27,10 @@ Greasy Fork地址：[Greasy Fork](https://greasyfork.org/zh-CN/scripts/479230-%E
 
 <br><br>
 ## 2. 更新说明
+### 20231108
+- 修复了部分Bug。
+- 增加了文件编码切换功能，解决乱码问题。
+<br>
 
 ### 20231108
 - 修复了部分Bug。
