@@ -7,12 +7,13 @@
     let keyPreLine = 'Comma';
     let keyHide = 'F1';//'Minus'; 减号在网页中还是要经常使用的，换F1键控制开关
     let keyTimer = 'Enter';//定时滚屏还是需要的，加个快捷键
-    let hide = false;
+    let hide = false;//tampermonkey插件版不默认显示界面，否则有可能会议投屏时候打开新页面社死
     let progress = 0;
     let timer = null;
     let timerInterval = 3000;
     let posBeforeSearch = 0;
     let bookmode = false;
+    let showMouseShortcuts = true;
     let fileCoder = GM_getValue("thief-book-encoder","utf-8"); // 默认以utf-8格式打开，会记住最后一次切换的格式
 
     if(!localStorage){
@@ -69,39 +70,39 @@
         '            margin-top: 12px;\n'+
         '        }\n' +
         '        #thief-book-searchbox{\n' +
-        '			border: 1px solid black;\n' +
-        '			display: none;\n'+
-        '			width: 300px;\n' +
-        '			height: 150px;\n' +
-        '			position: absolute;\n' +
-        '			margin:auto;\n' +
-        '			top: 0px;left: 0px;bottom: 0px;right: 0px;\n' +
-        '			background-color: #eee;\n' +
-        '			font-size: 15px;\n' +
-        '			z-index: 999;\n' +
-        '		}\n' +
-        '		#thief-book-searchbox-title{\n' +
-        '			width: 100%;\n' +
-        '			height: 20px;\n' +
-        '			margin: 0px;\n' +
-        '			top: 0px;left: 0px;\n' +
-        '			background-color: #666;\n' +
-        '		}\n' +
-        '		.thief-book-search-lines{\n' +
-        '			margin:10px;\n' +
-        '			display: flex;\n' +
-        '			justify-content: space-between;\n' +
-        '		}\n' +
-        '		.thief-book-search-buttons{\n' +
-        '			margin:2px;\n' +
-        '			border: 1px solid black;\n' +
-        '			height:20px;\n' +
-        '			width: 80px;\n' +
-        '			background-color: #ccc;\n' +
-        '			text-align: center;\n' +
-        '			font-size: 12px;\n' +
-        '			cursor: pointer;\n' +
-        '		}\n' +
+        '           border: 1px solid black;\n' +
+        '           display: none;\n'+
+        '           width: 300px;\n' +
+        '           height: 150px;\n' +
+        '           position: absolute;\n' +
+        '           margin:auto;\n' +
+        '           top: 0px;left: 0px;bottom: 0px;right: 0px;\n' +
+        '           background-color: #eee;\n' +
+        '           font-size: 15px;\n' +
+        '           z-index: 999;\n' +
+        '       }\n' +
+        '       #thief-book-searchbox-title{\n' +
+        '           width: 100%;\n' +
+        '           height: 20px;\n' +
+        '           margin: 0px;\n' +
+        '           top: 0px;left: 0px;\n' +
+        '           background-color: #666;\n' +
+        '       }\n' +
+        '       .thief-book-search-lines{\n' +
+        '           margin:10px;\n' +
+        '           display: flex;\n' +
+        '           justify-content: space-between;\n' +
+        '       }\n' +
+        '       .thief-book-search-buttons{\n' +
+        '           margin:2px;\n' +
+        '           border: 1px solid black;\n' +
+        '           height:20px;\n' +
+        '           width: 80px;\n' +
+        '           background-color: #ccc;\n' +
+        '           text-align: center;\n' +
+        '           font-size: 12px;\n' +
+        '           cursor: pointer;\n' +
+        '       }\n' +
         '       #thief-book-changecoder{\n' +
         '           border: 1px solid black;\n' +
         '           height:15px;\n' +
@@ -119,6 +120,27 @@
         '           text-align: center;\n' +
         '           font-size: 10px;\n' +
         '       }\n' +
+        '       #thief-book-mouseShortcuts{\
+                    position: absolute;\
+                    border: 1px dotted black;\
+                    top: 500px;\
+                    left: 10px;\
+                    height:22px;\
+                    width:100px;\
+                    display: flex;\
+                    justify-content: space-between;\
+                    margin: auto;\
+                    z-index:999;\
+                }\
+                .thief-book-floatIcon{\
+                    position: relative;\
+                    border: 1px solid black;\
+                    height:16px;\
+                    width:16px;\
+                    margin: auto;\
+                    font-size: 10px;\
+                    text-align: center;\
+                }\n' +
         '    </style>';
 
     document.body.innerHTML +=
@@ -143,29 +165,41 @@
         '        <label>\n' +
         '            <div id="thief-book-search" class="thief-book-icon" title="搜索指定文字">&#128269;</div>' +
         '        </label>\n' +
+        '        <label>\n' +
+        '            <div id="thief-book-showMouseShortcuts" class="thief-book-icon" title="是否显示鼠标点击用的快捷按钮\n在快捷按钮区滚动滚轮也可以翻页">&#128433;</div>' +
+        '        </label>\n' +
         '    </div>\n' +
         '    <div id="thief-book-lineBox" class="thief-book-line-box"></div>\n' +
         '</div>\n' +
         '<div id="thief-book-searchbox">\n' +
-        '	<div id="thief-book-searchbox-title">搜索</div>\n' +
-        '	<div class="thief-book-search-lines">\n' +
-        '		<label for="thief-book-search-text">搜索文字：</label>\n' +
-        '		<input type="text" id="thief-book-search-text">\n' +
-        '	</div>\n' +
-        '	<div class="thief-book-search-lines">\n' +
-        '		<div id="thief-book-search-next" class="thief-book-search-buttons">下一个</div>\n' +
-        '		<div id="thief-book-search-prev" class="thief-book-search-buttons">上一个</div>\n' +
-        '		<div id="thief-book-search-fromstart" class="thief-book-search-buttons">从头搜</div>\n' +
-        '	</div>\n' +
-        '	<div class="thief-book-search-lines">\n' +
-        '		<div id="thief-book-search-close" class="thief-book-search-buttons">关闭</div>\n' +
-        '		<div id="thief-book-search-closestay" class="thief-book-search-buttons">留在当前位置</div>\n' +
-        '		<div id="thief-book-search-closereturn" class="thief-book-search-buttons">返回原位置</div>\n' +
-        '	</div>\n' +
-        '</div>';
+        '   <div id="thief-book-searchbox-title">搜索</div>\n' +
+        '   <div class="thief-book-search-lines">\n' +
+        '       <label for="thief-book-search-text">搜索文字：</label>\n' +
+        '       <input type="text" id="thief-book-search-text">\n' +
+        '   </div>\n' +
+        '   <div class="thief-book-search-lines">\n' +
+        '       <div id="thief-book-search-next" class="thief-book-search-buttons">下一个</div>\n' +
+        '       <div id="thief-book-search-prev" class="thief-book-search-buttons">上一个</div>\n' +
+        '       <div id="thief-book-search-fromstart" class="thief-book-search-buttons">从头搜</div>\n' +
+        '   </div>\n' +
+        '   <div class="thief-book-search-lines">\n' +
+        '       <div id="thief-book-search-close" class="thief-book-search-buttons">关闭</div>\n' +
+        '       <div id="thief-book-search-closestay" class="thief-book-search-buttons">留在当前位置</div>\n' +
+        '       <div id="thief-book-search-closereturn" class="thief-book-search-buttons">返回原位置</div>\n' +
+        '   </div>\n' +
+        '</div>' +
+        '<div id="thief-book-mouseShortcuts">\
+            <div id="thief-book-onoffDiv" class="thief-book-floatIcon">×</div>\
+            <div id="thief-book-prelineDiv" class="thief-book-floatIcon">←</div>\
+            <div id="thief-book-nextlineDiv" class="thief-book-floatIcon">→</div>\
+            <div id="thief-book-timerOnoffDiv" class="thief-book-floatIcon">T</div>\
+        </div>';
 
     document.getElementById('thief-book-currentcoder').innerText = fileCoder;
     parseText(false);
+
+    document.getElementById('thief-book-mouseShortcuts').style.left = GM_getValue("thief-book-mouseshortcuts-left", "10px");
+    document.getElementById('thief-book-mouseShortcuts').style.top = GM_getValue("thief-book-mouseshortcuts-top", "500px");
 
     document.getElementById('thief-book-selectFile')
         .addEventListener('change', function(){
@@ -241,6 +275,61 @@
     document.getElementById('thief-book-changecoder')
         .addEventListener('click', function(){
         tryFileCoder();
+    })
+    document.getElementById('thief-book-showMouseShortcuts')
+        .addEventListener('click', function(){
+        showMouseShortcuts = !showMouseShortcuts;
+        printLine();
+    })
+    document.getElementById('thief-book-mouseShortcuts')
+        .addEventListener('mousedown', function(event){
+        let xbox = event.clientX - document.getElementById('thief-book-mouseShortcuts').offsetLeft;
+        let ybox = event.clientY - document.getElementById('thief-book-mouseShortcuts').offsetTop;
+
+        function divOndrag(eve){
+            let x = eve.clientX;
+            let y = eve.clientY;
+            let movex = x - xbox;
+            let movey = y - ybox;
+            document.getElementById('thief-book-mouseShortcuts').style.left = movex + "px";
+            document.getElementById('thief-book-mouseShortcuts').style.top = movey + "px";
+        };
+
+        document.addEventListener('mousemove', divOndrag);
+
+        document.addEventListener('mouseup', function(){
+            document.removeEventListener("mousemove",divOndrag);
+            GM_setValue("thief-book-mouseshortcuts-left", document.getElementById('thief-book-mouseShortcuts').style.left);
+            GM_setValue("thief-book-mouseshortcuts-top", document.getElementById('thief-book-mouseShortcuts').style.top);
+        });
+    })
+    document.getElementById('thief-book-mouseShortcuts')
+        .addEventListener('wheel', function(event) {
+        if(event.deltaY > 0){
+            if(!hide)nextLine();
+        }
+        if(event.deltaY < 0){
+            if(!hide)preLine();
+        }
+        event.stopPropagation();
+        event.preventDefault();
+    })
+    document.getElementById('thief-book-onoffDiv')
+        .addEventListener('click', function(){
+        onOff();
+    })
+    document.getElementById('thief-book-prelineDiv')
+        .addEventListener('click', function(){
+        if(!hide)preLine();
+    })
+    document.getElementById('thief-book-nextlineDiv')
+        .addEventListener('click', function(){
+        if(!hide)nextLine();
+    })
+    document.getElementById('thief-book-timerOnoffDiv')
+        .addEventListener('click', function(){
+        let clickEvent = new Event('click');
+        document.getElementById('thief-book-timer').dispatchEvent(clickEvent);
     })
     window.addEventListener('keydown', function(e) {
         if (e.code === keyNextLine) {
@@ -378,8 +467,11 @@
         if (hide) {
             document.getElementById('thief-book-searchbox').style.display = "none";
             document.getElementById('thief-book-leftCorner').style.display = "none";
+            document.getElementById('thief-book-mouseShortcuts').style.display='none';
         } else {
             document.getElementById('thief-book-leftCorner').style.display = "block";
+            if(showMouseShortcuts)document.getElementById('thief-book-mouseShortcuts').style.display='flex';
+            else{document.getElementById('thief-book-mouseShortcuts').style.display='none';}
         }
 
         document.getElementById('thief-book-lineBox').innerHTML = '';
@@ -430,20 +522,20 @@
         let i = 0;
         if(direction == "prev"){
             for(i=from-1;i>=0;i--){
-            	if(lines[i].lastIndexOf(stext)>0){
-            		tmpSearchPos = i;
-            		gotoLine(tmpSearchPos);
-            		return;
-            	}
+                if(lines[i].lastIndexOf(stext)>0){
+                    tmpSearchPos = i;
+                    gotoLine(tmpSearchPos);
+                    return;
+                }
             }
         }
         if(direction == "next"){
             for(i=from?from+1:0;i<lines.length;i++){
-            	if(lines[i].lastIndexOf(stext)>0){
-            		tmpSearchPos = i;
-            		gotoLine(tmpSearchPos);
-            		return;
-            	}
+                if(lines[i].lastIndexOf(stext)>0){
+                    tmpSearchPos = i;
+                    gotoLine(tmpSearchPos);
+                    return;
+                }
             }
         }
         if(tmpSearchPos == -1){
@@ -468,7 +560,7 @@
             'utf-16le',
             'ascii'
         ];
-        var i = encodingList.indexOf(fileCoder);
+        let i = encodingList.indexOf(fileCoder);
         i++;
         if(i>=encodingList.length)i=0;
         fileCoder = encodingList[i];
