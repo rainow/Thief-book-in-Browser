@@ -406,6 +406,7 @@
     }
 
     function parseLines(text) {
+        text = text.replace(/\r/g, "");
         let i = 0,j = 0;
         let lines = [];
         let tmpline = "";
