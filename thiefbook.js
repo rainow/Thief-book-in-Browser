@@ -7,7 +7,7 @@
     let keyPreLine = 'Comma';
     let keyHide = 'F1';//'Minus'; 减号在网页中还是要经常使用的，换F1键控制开关
     let keyTimer = 'Enter';//定时滚屏还是需要的，加个快捷键
-    let hide = false;//tampermonkey插件版不默认显示界面，否则有可能会议投屏时候打开新页面社死
+    let hide = false;//打开后默认显示界面
     let progress = 0;
     let timer = null;
     let timerInterval = 3000;
@@ -20,15 +20,15 @@
         text = "您的浏览器不支持保存进度！"+text;
     }
 
-    document.head.innerHTML +=
-        '<style>\n' +
+    var newStyle = document.createElement("style");
+    newStyle.innerHTML =
         '        .thief-book-line-box {\n' +
         '            position: fixed;\n' +
         '            left: 0;\n' +
         '            bottom: 0px;\n' +
         '        }\n' +
         '        .thief-book-line {\n' +
-        '            font-size: 10px;\n' +
+        '            font-size: 11px;\n' +
         '            text-align:left;\n' +
         '            background-color: rgb(222,225,230);\n' +
         '            height: 23px;\n' +
@@ -140,10 +140,13 @@
                     margin: auto;\
                     font-size: 10px;\
                     text-align: center;\
-                }\n' +
-        '    </style>';
+                }\n';
+    document.head.appendChild(newStyle);
 
-    document.body.innerHTML +=
+    var newDiv = document.createElement("div");
+    newDiv.id = "thief-book-div";
+    newDiv.class = "thief-book-div";
+    newDiv.innerHTML =
         '<div id="thief-book-leftCorner" class="thief-book-mouse-area">\n' +
         '    <div id="thief-book-settings" class="thief-book-settings-area">\n' +
         '        <div><div id="thief-book-currentcoder" title="当前编码格式">utf-8</div><div id="thief-book-changecoder" title="点击按钮切换编码格式">乱码点我</div></div>\n' +
@@ -194,6 +197,7 @@
             <div id="thief-book-nextlineDiv" class="thief-book-floatIcon">→</div>\
             <div id="thief-book-timerOnoffDiv" class="thief-book-floatIcon">T</div>\
         </div>';
+    document.body.appendChild(newDiv);
 
     document.getElementById('thief-book-currentcoder').innerText = fileCoder;
     parseText(false);
